@@ -8,7 +8,7 @@ const verifyMovieId = async (
   response: Response,
   next: NextFunction
 ): Promise<Response | void> => {
-  const movieId = Number(request.params.id);
+  const movieId: number = Number(request.params.id);
 
   const findMovie: string = `
   SELECT * FROM movies WHERE id = $1
@@ -65,7 +65,7 @@ const listByCategory = async (
   response: Response,
   next: NextFunction
 ): Promise<Response | void> => {
-  const { category } = request.query;
+  const { category }: any = request.query;
 
   if (category) {
     const filterMovies: string = `

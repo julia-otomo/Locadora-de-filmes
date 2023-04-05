@@ -41,7 +41,7 @@ const listMovies = async (
 };
 
 const getSpecificMovie = (request: Request, response: Response): Response => {
-  const movie = response.locals.movie;
+  const movie: IMovieResult = response.locals.movie;
 
   return response.json(movie.rows[0]);
 };
