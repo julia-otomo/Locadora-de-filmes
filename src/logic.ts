@@ -1,6 +1,6 @@
 import { Request, Response } from "express";
 import { client } from "./database";
-import { IMovie, IMovieResult } from "./interfaces";
+import { IMovie, IMovieCreate, IMovieResult } from "./interfaces";
 import format from "pg-format";
 import { QueryConfig } from "pg";
 
@@ -8,10 +8,10 @@ const createMovie = async (
   request: Request,
   response: Response
 ): Promise<Response> => {
-  const requestBody = request.body;
+  const requestBody: IMovieCreate = request.body;
 
   const requestKeys: string[] = Object.keys(requestBody);
-  const requestValues: string[] = Object.values(requestBody);
+  const requestValues: Array<string | number> = Object.values(requestBody);
 
   const newMovie: string = `
       INSERT INTO "movies" (%I)
@@ -50,13 +50,13 @@ const updateMovie = async (
   request: Request,
   response: Response
 ): Promise<Response> => {
-  const movieId = response.locals.id;
+  const movieId: number = response.locals.id;
 
-  const requestBody = request.body;
+  const requestBody: IMovieCreate = request.body;
 
   const requestKeys: string[] = Object.keys(requestBody);
 
-  const requestValues: string[] = Object.values(requestBody);
+  const requestValues: Array<string | number> = Object.values(requestBody);
 
   const updateQuery: string = `
     UPDATE 
@@ -84,7 +84,7 @@ const deleteMovie = async (
   request: Request,
   response: Response
 ): Promise<Response> => {
-  const movieId = response.locals.id;
+  const movieId: number = response.locals.id;
 
   const deleteMovie: string = `
     DELETE FROM movies WHERE id = $1
