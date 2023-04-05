@@ -1,5 +1,16 @@
-import IMovie from "./interfaces";
+import { Client } from "pg";
 
-const movies: Array<IMovie> = [];
+const client: Client = new Client({
+  user: "Julia",
+  password: "1234",
+  host: "localhost",
+  database: "movies_sp2",
+  port: 5432,
+});
 
-export default movies;
+const startDatabase = async (): Promise<void> => {
+  await client.connect();
+  console.log("Database connected");
+};
+
+export { client, startDatabase };

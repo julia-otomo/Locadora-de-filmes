@@ -1,53 +1,101 @@
 import { Request, Response } from "express";
-import movies from "./database";
-import IMovie from "./interfaces";
+import { client } from "./database";
+import { IMovie, IMovieResult } from "./interfaces";
+import format from "pg-format";
+import { QueryConfig } from "pg";
 
-const createMovie = (request: Request, response: Response): Response => {
-  const newMovie = {
-    id: movies.length + 1,
-    ...request.body,
-  };
+const createMovie = async (
+  request: Request,
+  response: Response
+): Promise<Response> => {
+  const requestBody = request.body;
 
-  movies.push(newMovie);
+  const requestKeys: string[] = Object.keys(requestBody);
+  const requestValues: string[] = Object.values(requestBody);
 
-  return response.status(201).json(newMovie);
+  const newMovie: string = `
+      INSERT INTO "movies" (%I)
+      VALUES (%L)
+      RETURNING *;
+    `;
+
+  const queryFormat: string = format(newMovie, requestKeys, requestValues);
+
+  const queryResult: IMovieResult = await client.query(queryFormat);
+  const movie: IMovie = queryResult.rows[0];
+
+  return response.status(201).json(movie);
 };
 
-const listMovies = (request: Request, response: Response): Response => {
-  const { category } = request.query;
+const listMovies = async (
+  request: Request,
+  response: Response
+): Promise<Response> => {
+  const allMovies: string = `
+    SELECT * FROM MOVIES
+  `;
 
-  const filterMovies: IMovie[] = movies.filter(
-    (movie) => movie.category === category
-  );
+  const queryResultAllMovies: IMovieResult = await client.query(allMovies);
 
-  if (filterMovies.length > 0) {
-    return response.json(filterMovies);
-  }
-
-  return response.json(movies);
+  return response.json(queryResultAllMovies.rows);
 };
 
 const getSpecificMovie = (request: Request, response: Response): Response => {
-  const movieIndex = response.locals.movie;
+  const movie = response.locals.movie;
 
-  return response.json(movies[movieIndex]);
+  return response.json(movie.rows[0]);
 };
 
-const updateMovie = (request: Request, response: Response): Response => {
-  const movieIndex = response.locals.movie;
+const updateMovie = async (
+  request: Request,
+  response: Response
+): Promise<Response> => {
+  const movieId = response.locals.id;
 
-  movies[movieIndex] = {
-    ...movies[movieIndex],
-    ...request.body,
+  const requestBody = request.body;
+
+  const requestKeys: string[] = Object.keys(requestBody);
+
+  const requestValues: string[] = Object.values(requestBody);
+
+  const updateQuery: string = `
+    UPDATE 
+      movies 
+    SET 
+      (%I) = ROW(%L) 
+    WHERE 
+      id = $1 
+    RETURNING *
+  `;
+
+  const queryFormat: string = format(updateQuery, requestKeys, requestValues);
+
+  const queryConfig: QueryConfig = {
+    text: queryFormat,
+    values: [movieId],
   };
 
-  return response.json(movies[movieIndex]);
+  const queryResult: IMovieResult = await client.query(queryConfig);
+
+  return response.json(queryResult.rows[0]);
 };
 
-const deleteMovie = (request: Request, response: Response): Response => {
-  const movieIndex = response.locals.movie;
+const deleteMovie = async (
+  request: Request,
+  response: Response
+): Promise<Response> => {
+  const movieId = response.locals.id;
 
-  movies.splice(movieIndex, 1);
+  const deleteMovie: string = `
+    DELETE FROM movies WHERE id = $1
+  `;
+
+  const queryConfig: QueryConfig = {
+    text: deleteMovie,
+    values: [movieId],
+  };
+
+  const queryResult: IMovieResult = await client.query(queryConfig);
 
   return response.status(204).send();
 };
